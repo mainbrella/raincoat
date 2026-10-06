@@ -1,37 +1,58 @@
-import { createAuthClient, GOOGLE_CLIENT_ID, API_ORIGIN } from './auth.js';
+import { createAuthClient, GOOGLE_CLIENT_ID, API_ORIGIN } from './auth.ts';
+import type { AdminUser, User } from './types.ts';
 
 const auth = createAuthClient();
-const page = document.querySelector('.login-content');
-const status = document.querySelector('.login-status');
-const error = document.querySelector('.login-error');
-const provider = document.querySelector('.login-provider');
-const googleHost = document.querySelector('.google-button-host');
-const googleLoading = document.querySelector('.google-loading');
-const googleRetry = document.querySelector('.google-retry');
-const account = document.querySelector('.account');
-const identity = document.querySelector('.login-identity');
-const signOutButton = document.querySelector('.login-sign-out');
-const loginTitle = document.querySelector('#login-title');
-const emailForm = document.querySelector('.email-login-form');
-const emailInput = document.querySelector('#login-email');
-const passwordInput = document.querySelector('#login-password');
-const emailSubmit = document.querySelector('.email-login-submit');
-const usersPage = document.querySelector('.users-content');
-const usersStatus = document.querySelector('.users-status');
-const usersError = document.querySelector('.users-error');
-const usersTable = document.querySelector('.users-table-wrap');
-const usersRows = document.querySelector('.users-rows');
-const usersRefresh = document.querySelector('.users-refresh');
+function requiredElement<T extends Element>(selector: string): T {
+  const element = document.querySelector<T>(selector);
+  if (!element) throw new Error(`Required page element not found: ${selector}`);
+  return element;
+}
+
+const page = requiredElement<HTMLElement>('.login-content');
+const status = requiredElement<HTMLElement>('.login-status');
+const error = requiredElement<HTMLElement>('.login-error');
+const provider = requiredElement<HTMLElement>('.login-provider');
+const googleHost = requiredElement<HTMLElement>('.google-button-host');
+const googleLoading = requiredElement<HTMLElement>('.google-loading');
+const googleRetry = requiredElement<HTMLButtonElement>('.google-retry');
+const account = requiredElement<HTMLElement>('.account');
+const identity = requiredElement<HTMLElement>('.login-identity');
+const signOutButton = requiredElement<HTMLButtonElement>('.login-sign-out');
+const loginTitle = requiredElement<HTMLHeadingElement>('#login-title');
+const usersTitle = requiredElement<HTMLHeadingElement>('#users-title');
+const emailForm = requiredElement<HTMLFormElement>('.email-login-form');
+const emailInput = requiredElement<HTMLInputElement>('#login-email');
+const passwordInput = requiredElement<HTMLInputElement>('#login-password');
+const emailSubmit = requiredElement<HTMLButtonElement>('.email-login-submit');
+const usersPage = requiredElement<HTMLElement>('.users-content');
+const usersStatus = requiredElement<HTMLElement>('.users-status');
+const usersError = requiredElement<HTMLElement>('.users-error');
+const usersTable = requiredElement<HTMLElement>('.users-table-wrap');
+const usersRows = requiredElement<HTMLTableSectionElement>('.users-rows');
+const usersRefresh = requiredElement<HTMLButtonElement>('.users-refresh');
 const ADMIN_EMAIL = 'oneone@gmail.com';
 const signInPrompt = 'Continue with Google or email and password.';
 
-let user = null;
+let user: User | null = null;
 let signingIn = false;
 let signingOut = false;
 let usersRequest = 0;
 
 function isAdmin() {
   return user?.email?.trim().toLowerCase() === ADMIN_EMAIL;
+}
+
+function isAdminUser(value: unknown): value is AdminUser {
+  return typeof value === 'object' && value !== null
+    && 'id' in value && typeof value.id === 'string'
+    && 'created_at' in value && typeof value.created_at === 'string'
+    && (!('name' in value) || value.name === null || typeof value.name === 'string')
+    && (!('email' in value) || value.email === null || typeof value.email === 'string');
+}
+
+function isAdminUsersResponse(value: unknown): value is { users: AdminUser[] } {
+  return typeof value === 'object' && value !== null && 'users' in value
+    && Array.isArray(value.users) && value.users.every(isAdminUser);
 }
 
 start();
@@ -68,7 +89,7 @@ async function showCurrentState() {
   if (isAdmin()) {
     page.hidden = true;
     usersPage.hidden = false;
-    document.querySelector('#users-title').focus({ preventScroll: true });
+    usersTitle.focus({ preventScroll: true });
     await loadUsers();
   } else if (user) {
     showAccessDenied();
@@ -113,9 +134,9 @@ async function loadUsers() {
       showAccessDenied();
       return;
     }
-    const result = await response.json().catch(() => null);
+    const result: unknown = await response.json().catch(() => null);
     if (requestID !== usersRequest) return;
-    if (!response.ok || !Array.isArray(result?.users)) throw new Error('users_unavailable');
+    if (!response.ok || !isAdminUsersResponse(result)) throw new Error('users_unavailable');
     const rows = document.createDocumentFragment();
     for (const item of result.users) {
       const row = document.createElement('tr');
@@ -192,11 +213,11 @@ async function loadGoogleButton() {
   }
 }
 
-async function handleCredential(credential) {
+async function handleCredential(credential: string | undefined): Promise<void> {
   await signIn(() => auth.signInWithGoogle(credential));
 }
 
-emailForm?.addEventListener('submit', async (event) => {
+emailForm.addEventListener('submit', async (event) => {
   event.preventDefault();
   if (!emailForm.reportValidity()) return;
   if (emailInput.value.trim().toLowerCase() !== ADMIN_EMAIL) {
@@ -206,7 +227,7 @@ emailForm?.addEventListener('submit', async (event) => {
   await signIn(() => auth.signInWithEmail(emailInput.value, passwordInput.value));
 });
 
-async function signIn(authenticate) {
+async function signIn(authenticate: () => Promise<{ user: User }>): Promise<void> {
   if (signingIn || signingOut || user) return;
   signingIn = true;
   clearError();
@@ -270,7 +291,7 @@ window.addEventListener('auth-change', (event) => {
   showCurrentState();
 });
 
-function showError(cause) {
+function showError(cause: unknown) {
   const target = page.hidden ? usersError : error;
   target.textContent = cause instanceof Error ? cause.message : 'Something went wrong. Please try again.';
   target.hidden = false;
@@ -285,7 +306,7 @@ function clearError() {
 
 function loadGoogleIdentityScript() {
   if (window.google?.accounts?.id) return Promise.resolve();
-  const existingScript = document.querySelector('script[data-google-identity]');
+  const existingScript = document.querySelector<HTMLScriptElement>('script[data-google-identity]');
   const script = existingScript || document.createElement('script');
   if (!existingScript) {
     script.src = 'https://accounts.google.com/gsi/client';
@@ -294,9 +315,9 @@ function loadGoogleIdentityScript() {
     script.dataset.googleIdentity = 'true';
   }
 
-  return new Promise((resolve, reject) => {
-    let timeout;
-    const finish = (failure) => {
+  return new Promise<void>((resolve, reject) => {
+    let timeout: ReturnType<typeof setTimeout>;
+    const finish = (failure?: Error) => {
       clearTimeout(timeout);
       script.removeEventListener('load', onLoad);
       script.removeEventListener('error', onError);

@@ -11,6 +11,7 @@ the public site's advertising scripts or cookie consent UI.
 ```sh
 npm ci
 npm run dev       # Vite development server at http://localhost:5174
+npm run typecheck # Check browser and Vite configuration TypeScript
 npm run build     # Build the static site into dist/
 npm run preview   # Preview the built site with Wrangler
 npm run deploy    # Build, then deploy dist/ with Wrangler
@@ -26,3 +27,6 @@ Google sign-in also requires the admin origin (`https://raincoat.mainbrella.com`
 or `http://localhost:5174` for development) in the existing Google OAuth client's
 authorized JavaScript origins. The backend allows credentialed requests from
 these origins. Deploy both repositories to make the new endpoint available.
+
+Application code and Vite configuration use TypeScript. Add new source modules
+as `.ts` files; `npm run build` runs the typecheck before creating the site.
