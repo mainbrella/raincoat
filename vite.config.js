@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 export default defineConfig({
   base: "/",
   publicDir: "public",
+  server: { port: 5174, strictPort: true },
   plugins: [
     {
       name: "page-redirects",
