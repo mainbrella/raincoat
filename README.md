@@ -3,6 +3,9 @@
 Mainbrella user administration. `/` shows the login form, then the users table
 for the authenticated account `oneone@gmail.com`. Both the UI and backend
 enforce the email restriction. Users are listed by `created_at DESC, id DESC`.
+The Plan column shows None, Builder, Pro, or Scale from the backend's last synced
+active subscription or an unexpired trial. It is an administrative snapshot;
+paid access is still verified separately with Stripe.
 
 The Google and email/password authentication client is copied from `../web`.
 Sign-in uses the backend's HttpOnly session cookie; this admin app does not load

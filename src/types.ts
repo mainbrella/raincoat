@@ -6,6 +6,7 @@ export interface User {
 
 export interface AdminUser extends User {
   created_at: string;
+  plan: 'none' | 'builder' | 'pro' | 'scale';
 }
 
 export interface AuthSession {

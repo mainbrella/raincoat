@@ -46,6 +46,7 @@ function isAdminUser(value: unknown): value is AdminUser {
   return typeof value === 'object' && value !== null
     && 'id' in value && typeof value.id === 'string'
     && 'created_at' in value && typeof value.created_at === 'string'
+    && 'plan' in value && (value.plan === 'none' || value.plan === 'builder' || value.plan === 'pro' || value.plan === 'scale')
     && (!('name' in value) || value.name === null || typeof value.name === 'string')
     && (!('email' in value) || value.email === null || typeof value.email === 'string');
 }
@@ -141,13 +142,13 @@ async function loadUsers() {
     for (const item of result.users) {
       const row = document.createElement('tr');
       const created = new Date(item.created_at);
-      const values = [item.name || '—', item.email || '—',
+      const values = [item.name || '—', item.email || '—', item.plan[0].toUpperCase() + item.plan.slice(1),
         Number.isFinite(created.getTime()) ? created.toLocaleString(undefined, {
           year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short',
         }) : item.created_at || '—', item.id];
       for (const [index, value] of values.entries()) {
         const cell = document.createElement('td');
-        if (index === 2 && Number.isFinite(created.getTime())) {
+        if (index === 3 && Number.isFinite(created.getTime())) {
           const time = document.createElement('time');
           time.dateTime = item.created_at;
           time.title = item.created_at;

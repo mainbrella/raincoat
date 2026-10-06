@@ -61,7 +61,8 @@ table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14p
 th, td { padding: 12px 16px 12px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
 th { color: var(--muted); font-weight: 500; white-space: nowrap; }
 td { overflow-wrap: anywhere; min-width: 140px; max-width: 320px; }
-td:nth-child(3) { min-width: 180px; }
+td:nth-child(3) { min-width: 80px; white-space: nowrap; }
+td:nth-child(4) { min-width: 180px; }
 td:last-child { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12px; min-width: 200px; }
 th:last-child, td:last-child { padding-right: 0; }
 
