@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "mainbrella-raincoat",
+  "name": "mainbrella-raindrop",
   "compatibility_date": "2026-09-13",
   "workers_dev": false,
   "assets": {
@@ -10,7 +10,7 @@
   },
   "routes": [
     {
-      "pattern": "raincoat.mainbrella.com",
+      "pattern": "raindrop.mainbrella.com",
       "custom_domain": true
     }
   ]
