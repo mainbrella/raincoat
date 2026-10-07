@@ -1,4 +1,4 @@
-# Raincoat
+# Raindrop
 
 Mainbrella user administration. `/` shows the login form, then the users table
 for the authenticated account `oneone@gmail.com`. Both the UI and backend
@@ -26,10 +26,13 @@ Local requests default to `http://localhost:8787`; production requests default
 to `https://api.mainbrella.com`.
 
 Override these defaults with `VITE_API_URL` and `VITE_GOOGLE_CLIENT_ID` if needed.
-Google sign-in also requires the admin origin (`https://raincoat.mainbrella.com`,
+Google sign-in also requires the admin origin (`https://raindrop.mainbrella.com`,
 or `http://localhost:5174` for development) in the existing Google OAuth client's
 authorized JavaScript origins. The backend allows credentialed requests from
-these origins. Deploy both repositories to make the new endpoint available.
+these origins. When changing the admin domain, update both the Google OAuth
+client's authorized JavaScript origins and `AUTH_ORIGINS` in
+`../backend/worker/app/auth-core.ts`, then deploy the backend. This app uses
+Google's popup callback flow, so no OAuth redirect URI change is required.
 
 Application code and Vite configuration use TypeScript. Add new source modules
 as `.ts` files; `npm run build` runs the typecheck before creating the site.
