@@ -76,12 +76,12 @@
             <button class="ledger-next" type="button" aria-label="Next ledger page" disabled>Next</button>
           </nav>
           <div class="ledger-error users-error" role="alert" hidden></div>
-          <div class="ledger-table-wrap" role="region" aria-label="Accounting ledger entries, sequence ascending" tabindex="0" hidden>
+          <div class="ledger-table-wrap" role="region" aria-label="Accounting ledger entries, creation newest first" tabindex="0" hidden>
             <table class="ledger-table">
               <thead>
                 <tr>
-                  <th scope="col" aria-sort="ascending">Sequence</th>
-                  <th scope="col">Occurred (UTC)</th>
+                  <th scope="col">Sequence</th>
+                  <th scope="col" aria-sort="descending">Created (UTC)</th>
                   <th scope="col">Event</th>
                   <th scope="col">User ID</th>
                   <th scope="col">Details</th>

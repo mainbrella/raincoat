@@ -28,11 +28,11 @@ to `https://api.mainbrella.com`.
 
 Override these defaults with `VITE_API_URL` and `VITE_GOOGLE_CLIENT_ID` if needed.
 The authenticated navigation includes the users view at `/users` and a ledger
-view at `/ledger`. Both paths can be loaded directly. The ledger reads the
-event stream in ascending sequence order, 100 entries per page, using a fixed
-`throughSequence` snapshot across pages; Refresh starts a new snapshot. The
-backend must have applied migration `020_accounting_ledger.sql` before the
-ledger endpoint is available.
+view at `/ledger`. Both paths can be loaded directly. The ledger shows entries
+by creation time (`recorded_at` descending, then sequence descending), 100 entries
+per page, using a fixed `throughSequence` snapshot across pages; Refresh starts a
+new snapshot. The backend must have applied migration `020_accounting_ledger.sql`
+before the ledger endpoint is available.
 Google sign-in also requires the admin origin (`https://raindrop.mainbrella.com`,
 or `http://localhost:5174` for development) in the existing Google OAuth client's
 authorized JavaScript origins. The backend allows credentialed requests from

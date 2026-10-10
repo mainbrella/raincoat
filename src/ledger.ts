@@ -15,7 +15,7 @@ interface LedgerPage {
   throughSequence: number;
   nextCursor: number | null;
 }
-interface PagePosition { after: number; throughSequence?: number; }
+interface PagePosition { after: number; afterRecordedAt?: number; throughSequence?: number; }
 interface LedgerElements {
   page: HTMLElement;
   status: HTMLElement;
@@ -61,15 +61,20 @@ function parsePage(value: unknown, position: PagePosition): LedgerPage | null {
     || !(value.nextCursor === null || isSafeInteger(value.nextCursor))) return null;
   const entries = value.entries;
   if (!entries.every(isLedgerEntry)) return null;
-  let previous = position.after;
+  let previous: LedgerEntry | null = null;
+  const seenSequences = new Set<number>();
   for (const entry of entries as LedgerEntry[]) {
-    if (entry.sequence <= previous || entry.sequence > value.throughSequence) return null;
-    previous = entry.sequence;
+    if (entry.sequence > value.throughSequence || seenSequences.has(entry.sequence)) return null;
+    if (previous && (entry.recorded_at > previous.recorded_at
+      || (entry.recorded_at === previous.recorded_at && entry.sequence >= previous.sequence))) return null;
+    if (position.afterRecordedAt !== undefined && (entry.recorded_at > position.afterRecordedAt
+      || (entry.recorded_at === position.afterRecordedAt && entry.sequence >= position.after))) return null;
+    seenSequences.add(entry.sequence);
+    previous = entry;
   }
   const nextCursor = value.nextCursor as number | null;
   if (entries.length > PAGE_SIZE) return null;
-  if (nextCursor !== null && (entries.length === 0 || nextCursor <= position.after
-    || nextCursor !== previous || nextCursor >= value.throughSequence)) return null;
+  if (nextCursor !== null && (entries.length === 0 || nextCursor !== previous?.sequence)) return null;
   return { entries: entries as LedgerEntry[], throughSequence: value.throughSequence, nextCursor };
 }
 
@@ -150,12 +155,12 @@ function makeCell(text: string, className?: string): HTMLTableCellElement {
 function renderEntry(entry: LedgerEntry): HTMLTableRowElement {
   const row = document.createElement('tr');
   row.append(makeCell(entry.sequence.toLocaleString(), 'ledger-sequence'));
-  const occurred = document.createElement('td');
+  const created = document.createElement('td');
   const time = document.createElement('time');
-  time.dateTime = new Date(entry.occurred_at).toISOString();
-  time.textContent = formatUtc(entry.occurred_at);
-  occurred.append(time);
-  row.append(occurred);
+  time.dateTime = new Date(entry.recorded_at).toISOString();
+  time.textContent = formatUtc(entry.recorded_at);
+  created.append(time);
+  row.append(created);
   row.append(makeCell(EVENT_LABELS[entry.event_type]));
   row.append(makeCell(entry.user_id, 'ledger-user-id'));
 
@@ -166,13 +171,13 @@ function renderEntry(entry: LedgerEntry): HTMLTableRowElement {
   const detail = document.createElement('details');
   const summaryElement = document.createElement('summary');
   summaryElement.textContent = 'View data';
-  const recorded = document.createElement('p');
-  recorded.className = 'ledger-recorded';
-  recorded.textContent = `Recorded ${formatUtc(entry.recorded_at)}`;
+  const occurred = document.createElement('p');
+  occurred.className = 'ledger-recorded';
+  occurred.textContent = `Occurred ${formatUtc(entry.occurred_at)}`;
   const source = document.createElement('pre');
   source.className = 'ledger-source';
   source.textContent = JSON.stringify(entry, null, 2);
-  detail.append(summaryElement, recorded, source);
+  detail.append(summaryElement, occurred, source);
   detailsCell.append(eventSummary, detail);
   row.append(detailsCell);
   return row;
@@ -185,6 +190,7 @@ export function createLedgerView(elements: LedgerElements, canAccess: () => bool
   let history: PagePosition[] = [{ after: 0 }];
   let pageIndex = 0;
   let nextCursor: number | null = null;
+  let currentPageLast: LedgerEntry | null = null;
 
   function abortRequest() {
     requestID++;
@@ -201,6 +207,7 @@ export function createLedgerView(elements: LedgerElements, canAccess: () => bool
     history = [{ after: 0 }];
     pageIndex = 0;
     nextCursor = null;
+    currentPageLast = null;
     elements.rows.replaceChildren();
     elements.table.hidden = true;
     elements.pagination.hidden = true;
@@ -231,7 +238,7 @@ export function createLedgerView(elements: LedgerElements, canAccess: () => bool
       elements.pagination.hidden = true;
     }
 
-    const query = new URLSearchParams({ after: String(position.after), limit: String(PAGE_SIZE), format: 'json' });
+    const query = new URLSearchParams({ after: String(position.after), limit: String(PAGE_SIZE), format: 'json', order: 'desc' });
     if (position.throughSequence !== undefined) query.set('throughSequence', String(position.throughSequence));
     try {
       const response = await fetch(`${API_ORIGIN}/admin/accounting/ledger?${query}`, {
@@ -253,20 +260,20 @@ export function createLedgerView(elements: LedgerElements, canAccess: () => bool
       elements.rows.replaceChildren(rows);
       elements.table.hidden = result.entries.length === 0;
       nextCursor = result.nextCursor;
+      currentPageLast = result.entries.at(-1) ?? null;
       if (mode === 'refresh' || mode === 'initial') {
         history = [{ after: 0, throughSequence: result.throughSequence }];
         pageIndex = 0;
       } else if (mode === 'next') {
         history = history.slice(0, pageIndex + 1);
-        history.push({ after: position.after, throughSequence: result.throughSequence });
+        history.push({ ...position, throughSequence: result.throughSequence });
         pageIndex++;
       } else {
         pageIndex = Math.max(0, pageIndex - 1);
       }
-      const pageStart = result.entries[0]?.sequence;
-      const pageEnd = result.entries.at(-1)?.sequence;
       if (result.entries.length) {
-        elements.status.textContent = `Sequences ${pageStart?.toLocaleString()}–${pageEnd?.toLocaleString()} · Snapshot through ${result.throughSequence.toLocaleString()}`;
+        const count = result.entries.length;
+        elements.status.textContent = `${count.toLocaleString()} ${count === 1 ? 'entry' : 'entries'} · Snapshot through ${result.throughSequence.toLocaleString()}`;
         elements.pagination.hidden = false;
       } else {
         elements.status.textContent = history.length > 1
@@ -298,6 +305,7 @@ export function createLedgerView(elements: LedgerElements, canAccess: () => bool
     history = [{ after: 0 }];
     pageIndex = 0;
     nextCursor = null;
+    currentPageLast = null;
     load({ after: 0 }, 'refresh');
   });
   elements.previous.addEventListener('click', () => {
@@ -307,7 +315,8 @@ export function createLedgerView(elements: LedgerElements, canAccess: () => bool
   elements.next.addEventListener('click', () => {
     if (nextCursor === null) return;
     const current = history[pageIndex];
-    load({ after: nextCursor, throughSequence: current.throughSequence }, 'next');
+    if (!currentPageLast) return;
+    load({ after: nextCursor, afterRecordedAt: currentPageLast.recorded_at, throughSequence: current.throughSequence }, 'next');
   });
 
   return {
@@ -319,6 +328,7 @@ export function createLedgerView(elements: LedgerElements, canAccess: () => bool
         history = [{ after: 0 }];
         pageIndex = 0;
         nextCursor = null;
+        currentPageLast = null;
         void load({ after: 0 }, 'initial');
       }
     },
