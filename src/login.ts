@@ -1,5 +1,6 @@
 import { createAuthClient, GOOGLE_CLIENT_ID, API_ORIGIN } from './auth.ts';
 import { createLedgerView } from './ledger.ts';
+import { createAcquisitionView } from './acquisition.ts';
 import type { AdminUser, User } from './types.ts';
 
 const auth = createAuthClient();
@@ -43,6 +44,10 @@ const ledgerRefresh = requiredElement<HTMLButtonElement>('.ledger-refresh');
 const ledgerPrevious = requiredElement<HTMLButtonElement>('.ledger-previous');
 const ledgerNext = requiredElement<HTMLButtonElement>('.ledger-next');
 const ledgerPagination = requiredElement<HTMLElement>('.ledger-pagination');
+const acquisitionPage = requiredElement<HTMLElement>('.acquisition-content');
+const acquisitionTitle = requiredElement<HTMLHeadingElement>('#acquisition-title');
+const acquisitionStatus = requiredElement<HTMLElement>('.acquisition-status');
+const acquisitionError = requiredElement<HTMLElement>('.acquisition-error');
 const ADMIN_EMAIL = 'oneone@gmail.com';
 const signInPrompt = 'Continue with Google or email and password.';
 
@@ -53,7 +58,25 @@ let usersRequest = 0;
 const ledger = createLedgerView({
   page: ledgerPage, status: ledgerStatus, error: ledgerError, table: ledgerTable, rows: ledgerRows,
   refresh: ledgerRefresh, previous: ledgerPrevious, next: ledgerNext, pagination: ledgerPagination,
-}, () => isAdmin() && !signingOut, handleLedgerAuthFailure);
+}, () => isAdmin() && !signingOut, handleAdminAuthFailure);
+const acquisition = createAcquisitionView({
+  page: acquisitionPage, status: acquisitionStatus, error: acquisitionError,
+  table: requiredElement<HTMLElement>('.acquisition-table-wrap'),
+  columns: requiredElement<HTMLTableRowElement>('.acquisition-columns'),
+  rows: requiredElement<HTMLTableSectionElement>('.acquisition-rows'),
+  refresh: requiredElement<HTMLButtonElement>('.acquisition-refresh'),
+  previous: requiredElement<HTMLButtonElement>('.acquisition-previous'),
+  next: requiredElement<HTMLButtonElement>('.acquisition-next'),
+  pagination: requiredElement<HTMLElement>('.acquisition-pagination'),
+  views: requiredElement<HTMLElement>('.acquisition-views'),
+  filters: requiredElement<HTMLFormElement>('.acquisition-filters'),
+  eventFilter: requiredElement<HTMLElement>('.acquisition-event-filter'),
+}, () => isAdmin() && !signingOut, handleAdminAuthFailure);
+
+function currentAdminRoute() {
+  const path = location.pathname.replace(/\/$/, '');
+  return path === '/acquisition' ? 'acquisition' : path === '/ledger' ? 'ledger' : 'users';
+}
 
 function isAdmin() {
   return user?.email?.trim().toLowerCase() === ADMIN_EMAIL;
@@ -95,6 +118,7 @@ async function start() {
 async function showCurrentState() {
   usersRequest++;
   ledger.setActive(false);
+  acquisition.setActive(false);
   adminNav.hidden = true;
   appShell.classList.remove('is-admin');
   for (const link of adminNav.querySelectorAll<HTMLAnchorElement>('a[data-admin-route]')) link.removeAttribute('aria-current');
@@ -103,6 +127,7 @@ async function showCurrentState() {
   usersError.hidden = true;
   usersPage.hidden = true;
   ledgerPage.hidden = true;
+  acquisitionPage.hidden = true;
   page.hidden = false;
   loginTitle.textContent = 'Log in';
   clearError();
@@ -124,10 +149,12 @@ async function showCurrentState() {
 
 function showAccessDenied() {
   ledger.setActive(false);
+  acquisition.setActive(false);
   adminNav.hidden = true;
   appShell.classList.remove('is-admin');
   usersPage.hidden = true;
   ledgerPage.hidden = true;
+  acquisitionPage.hidden = true;
   usersRows.replaceChildren();
   usersTable.hidden = true;
   page.hidden = false;
@@ -139,7 +166,7 @@ function showAccessDenied() {
 
 function showAdminRoute() {
   if (!isAdmin() || signingOut) return;
-  const route = location.pathname.replace(/\/$/, '') === '/ledger' ? 'ledger' : 'users';
+  const route = currentAdminRoute();
   const canonicalPath = `/${route}`;
   const hash = location.hash === '#main' ? location.hash : '';
   if (location.pathname !== canonicalPath || location.hash !== hash) {
@@ -151,18 +178,19 @@ function showAdminRoute() {
   }
   usersPage.hidden = route !== 'users';
   ledgerPage.hidden = route !== 'ledger';
+  acquisitionPage.hidden = route !== 'acquisition';
+  ledger.setActive(route === 'ledger');
+  acquisition.setActive(route === 'acquisition');
   if (route === 'users') {
-    ledger.setActive(false);
     usersTitle.focus({ preventScroll: true });
     void loadUsers();
   } else {
     usersRequest++;
-    ledgerTitle.focus({ preventScroll: true });
-    ledger.setActive(true);
+    (route === 'ledger' ? ledgerTitle : acquisitionTitle).focus({ preventScroll: true });
   }
 }
 
-function handleLedgerAuthFailure(responseStatus: 401 | 403) {
+function handleAdminAuthFailure(responseStatus: 401 | 403) {
   if (responseStatus === 401) {
     user = null;
     void showCurrentState().then(() => { status.textContent = 'Your session expired. Sign in again.'; });
@@ -176,10 +204,10 @@ adminNav.addEventListener('click', (event) => {
   const target = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>('a[data-admin-route]') : null;
   if (!target || target.origin !== location.origin || target.target || target.hasAttribute('download')) return;
   const route = target.dataset.adminRoute;
-  if (route !== 'users' && route !== 'ledger') return;
+  if (route !== 'users' && route !== 'ledger' && route !== 'acquisition') return;
   event.preventDefault();
   const nextPath = `/${route}`;
-  const currentRoute = location.pathname.replace(/\/$/, '') === '/ledger' ? 'ledger' : 'users';
+  const currentRoute = currentAdminRoute();
   if (route === currentRoute && location.pathname === nextPath) return;
   history.pushState(null, '', `${nextPath}${location.search}`);
   if (isAdmin()) showAdminRoute();
@@ -341,10 +369,11 @@ signOutButton.addEventListener('click', async () => {
   signingOut = true;
   usersRequest++;
   ledger.setActive(false);
+  acquisition.setActive(false);
   signOutButton.disabled = true;
   page.setAttribute('aria-busy', 'true');
   const currentStatus = page.hidden ? usersStatus : status;
-  const currentPageStatus = ledgerPage.hidden ? currentStatus : ledgerStatus;
+  const currentPageStatus = !acquisitionPage.hidden ? acquisitionStatus : ledgerPage.hidden ? currentStatus : ledgerStatus;
   currentPageStatus.textContent = 'Signing out…';
   clearError();
   let restoreAdminRoute = false;
@@ -382,7 +411,7 @@ window.addEventListener('auth-change', (event) => {
 });
 
 function showError(cause: unknown) {
-  const target = page.hidden ? (ledgerPage.hidden ? usersError : ledgerError) : error;
+  const target = page.hidden ? (!acquisitionPage.hidden ? acquisitionError : ledgerPage.hidden ? usersError : ledgerError) : error;
   target.textContent = cause instanceof Error ? cause.message : 'Something went wrong. Please try again.';
   target.hidden = false;
 }
@@ -394,6 +423,8 @@ function clearError() {
   usersError.hidden = true;
   ledgerError.textContent = '';
   ledgerError.hidden = true;
+  acquisitionError.textContent = '';
+  acquisitionError.hidden = true;
 }
 
 function loadGoogleIdentityScript() {

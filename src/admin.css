@@ -12,7 +12,7 @@
 [hidden] { display: none !important; }
 body { margin: 0; font-size: 15px; line-height: 1.5; }
 a { color: inherit; }
-button, input { font: inherit; }
+button, input, select { font: inherit; }
 button {
   min-height: 44px;
   padding: 8px 14px;
@@ -87,6 +87,35 @@ th { color: var(--muted); font-weight: 500; white-space: nowrap; }
 .ledger-recorded { margin: 0 0 8px; color: var(--muted); font-size: 12px; }
 .ledger-source { margin: 8px 0 0; max-height: 320px; overflow: auto; color: #d5dae2; font: 12px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
 .ledger-pagination { display: flex; gap: 8px; margin-top: 8px; }
+.acquisition-content { margin-top: 24px; }
+.acquisition-views { display: flex; gap: 8px; margin-top: 16px; }
+.acquisition-views button[aria-pressed="true"] { background: var(--surface); border-color: var(--muted); }
+.acquisition-filters { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; margin-top: 16px; }
+.acquisition-filters label { display: grid; gap: 4px; flex: 1 1 180px; min-width: 0; font-size: 14px; }
+.acquisition-filters input, .acquisition-filters select { width: 100%; min-width: 0; min-height: 44px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 6px; color: inherit; background: var(--surface); }
+.acquisition-filter-actions { display: flex; gap: 8px; }
+.acquisition-status { margin-top: 12px; color: var(--muted); }
+.acquisition-pagination { display: flex; gap: 8px; margin-top: 8px; }
+.acquisition-table-wrap { margin-top: 16px; max-width: 100%; overflow-x: auto; }
+.acquisition-table { min-width: 900px; table-layout: fixed; }
+.acquisition-table-wrap[data-view="events"] .acquisition-table { min-width: 1200px; }
+.acquisition-table td { overflow-wrap: anywhere; }
+.acquisition-table th:last-child, .acquisition-table td:last-child { padding-right: 0; }
+.acquisition-table-wrap[data-view="leads"] th:nth-child(1) { width: 195px; }
+.acquisition-table-wrap[data-view="leads"] th:nth-child(2) { width: 220px; }
+.acquisition-table-wrap[data-view="leads"] th:nth-child(3) { width: 220px; }
+.acquisition-table-wrap[data-view="events"] th:nth-child(1) { width: 86px; }
+.acquisition-table-wrap[data-view="events"] th:nth-child(2) { width: 195px; }
+.acquisition-table-wrap[data-view="events"] th:nth-child(3) { width: 205px; }
+.acquisition-table-wrap[data-view="events"] th:nth-child(4) { width: 190px; }
+.acquisition-table-wrap[data-view="events"] th:nth-child(5) { width: 190px; }
+.acquisition-date { white-space: nowrap; }
+.acquisition-sequence { font-variant-numeric: tabular-nums; }
+.acquisition-id { margin-top: 4px; font: 12px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace; }
+.acquisition-note { margin-top: 4px; color: var(--muted); font-size: 12px; }
+.acquisition-lead-events { display: block; margin-top: 4px; padding: 8px 0; border: 0; color: var(--muted); }
+.acquisition-table details summary { cursor: pointer; min-height: 44px; padding-block: 10px; color: var(--muted); }
+.acquisition-source { margin: 0; max-height: 320px; overflow: auto; color: #d5dae2; font: 12px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
 
 @media (max-width: 600px) {
   .site-header { padding-inline: 16px; }
@@ -98,6 +127,8 @@ th { color: var(--muted); font-weight: 500; white-space: nowrap; }
   .email-login-form input { font-size: 16px; }
   .users-content { margin-top: 16px; }
   .ledger-content { margin-top: 16px; }
+  .acquisition-content { margin-top: 16px; }
+  .acquisition-filters input, .acquisition-filters select { font-size: 16px; }
   .app-shell.is-admin { display: flex; flex-direction: column; align-items: stretch; gap: 0; }
   .app-shell.is-admin main { padding-inline: 0; }
   .admin-nav { position: static; flex-direction: row; gap: 8px; margin-top: 8px; margin-bottom: 16px; }

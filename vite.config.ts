@@ -1,11 +1,24 @@
 import { defineConfig } from "vite";
 import { fileURLToPath } from "node:url";
+import { copyFile, mkdir } from "node:fs/promises";
+import { join } from "node:path";
 
 export default defineConfig({
   base: "/",
   publicDir: "public",
   server: { port: 5174, strictPort: true },
   plugins: [
+    {
+      name: "admin-route-pages",
+      async writeBundle(options) {
+        if (!options.dir) return;
+        for (const route of ["users", "ledger", "acquisition"]) {
+          const directory = join(options.dir, route);
+          await mkdir(directory, { recursive: true });
+          await copyFile(join(options.dir, "index.html"), join(directory, "index.html"));
+        }
+      },
+    },
     {
       name: "page-redirects",
       configureServer(server) {

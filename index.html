@@ -22,6 +22,7 @@
       <nav class="admin-nav" aria-label="Administration" hidden>
         <a href="/users" data-admin-route="users">Users</a>
         <a href="/ledger" data-admin-route="ledger">Ledger</a>
+        <a href="/acquisition" data-admin-route="acquisition">Acquisition Review</a>
       </nav>
       <main id="main" tabindex="-1">
         <section class="login-content" aria-labelledby="login-title" aria-busy="true">
@@ -88,6 +89,37 @@
                 </tr>
               </thead>
               <tbody class="ledger-rows"></tbody>
+            </table>
+          </div>
+        </section>
+        <section class="acquisition-content" aria-labelledby="acquisition-title" hidden>
+          <div class="users-heading">
+            <h1 id="acquisition-title" tabindex="-1">Acquisition Review</h1>
+            <button class="acquisition-refresh" type="button">Refresh</button>
+          </div>
+          <div class="acquisition-views" role="group" aria-label="Acquisition view">
+            <button type="button" data-acquisition-view="leads" aria-pressed="true">Leads</button>
+            <button type="button" data-acquisition-view="events" aria-pressed="false">Events</button>
+          </div>
+          <form class="acquisition-filters">
+            <label>User ID<input name="userId" type="text" autocomplete="off" spellcheck="false" maxlength="200" /></label>
+            <label>Lead ID<input name="leadId" type="text" autocomplete="off" spellcheck="false" maxlength="200" /></label>
+            <label class="acquisition-event-filter" hidden>Event<select name="event"><option value="">All events</option></select></label>
+            <div class="acquisition-filter-actions">
+              <button type="submit">Apply</button>
+              <button type="reset">Clear</button>
+            </div>
+          </form>
+          <p class="acquisition-status" role="status"></p>
+          <div class="acquisition-error users-error" role="alert" hidden></div>
+          <nav class="acquisition-pagination" aria-label="Acquisition pagination" hidden>
+            <button class="acquisition-previous" type="button" disabled>Previous</button>
+            <button class="acquisition-next" type="button" disabled>Next</button>
+          </nav>
+          <div class="acquisition-table-wrap" role="region" aria-label="Acquisition leads, newest first" tabindex="0" hidden>
+            <table class="acquisition-table">
+              <thead><tr class="acquisition-columns"></tr></thead>
+              <tbody class="acquisition-rows"></tbody>
             </table>
           </div>
         </section>
