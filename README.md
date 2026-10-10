@@ -27,7 +27,8 @@ Local requests default to `http://localhost:8787`; production requests default
 to `https://api.mainbrella.com`.
 
 Override these defaults with `VITE_API_URL` and `VITE_GOOGLE_CLIENT_ID` if needed.
-The authenticated navigation includes a ledger view at `#ledger`. It reads the
+The authenticated navigation includes the users view at `/users` and a ledger
+view at `/ledger`. Both paths can be loaded directly. The ledger reads the
 event stream in ascending sequence order, 100 entries per page, using a fixed
 `throughSequence` snapshot across pages; Refresh starts a new snapshot. The
 backend must have applied migration `020_accounting_ledger.sql` before the

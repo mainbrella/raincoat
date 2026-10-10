@@ -32,6 +32,7 @@ const usersTable = requiredElement<HTMLElement>('.users-table-wrap');
 const usersRows = requiredElement<HTMLTableSectionElement>('.users-rows');
 const usersRefresh = requiredElement<HTMLButtonElement>('.users-refresh');
 const adminNav = requiredElement<HTMLElement>('.admin-nav');
+const appShell = requiredElement<HTMLElement>('.app-shell');
 const ledgerPage = requiredElement<HTMLElement>('.ledger-content');
 const ledgerTitle = requiredElement<HTMLHeadingElement>('#ledger-title');
 const ledgerStatus = requiredElement<HTMLElement>('.ledger-status');
@@ -95,6 +96,7 @@ async function showCurrentState() {
   usersRequest++;
   ledger.setActive(false);
   adminNav.hidden = true;
+  appShell.classList.remove('is-admin');
   for (const link of adminNav.querySelectorAll<HTMLAnchorElement>('a[data-admin-route]')) link.removeAttribute('aria-current');
   usersRows.replaceChildren();
   usersTable.hidden = true;
@@ -110,6 +112,7 @@ async function showCurrentState() {
   if (isAdmin()) {
     page.hidden = true;
     adminNav.hidden = false;
+    appShell.classList.add('is-admin');
     showAdminRoute();
   } else if (user) {
     showAccessDenied();
@@ -122,6 +125,7 @@ async function showCurrentState() {
 function showAccessDenied() {
   ledger.setActive(false);
   adminNav.hidden = true;
+  appShell.classList.remove('is-admin');
   usersPage.hidden = true;
   ledgerPage.hidden = true;
   usersRows.replaceChildren();
@@ -135,8 +139,12 @@ function showAccessDenied() {
 
 function showAdminRoute() {
   if (!isAdmin() || signingOut) return;
-  const route = location.hash === '#ledger' ? 'ledger' : 'users';
-  if (location.hash !== `#${route}`) history.replaceState(null, '', `#${route}`);
+  const route = location.pathname.replace(/\/$/, '') === '/ledger' ? 'ledger' : 'users';
+  const canonicalPath = `/${route}`;
+  const hash = location.hash === '#main' ? location.hash : '';
+  if (location.pathname !== canonicalPath || location.hash !== hash) {
+    history.replaceState(null, '', `${canonicalPath}${location.search}${hash}`);
+  }
   for (const link of adminNav.querySelectorAll<HTMLAnchorElement>('a[data-admin-route]')) {
     if (link.dataset.adminRoute === route) link.setAttribute('aria-current', 'page');
     else link.removeAttribute('aria-current');
@@ -163,7 +171,21 @@ function handleLedgerAuthFailure(responseStatus: 401 | 403) {
   }
 }
 
-window.addEventListener('hashchange', () => {
+adminNav.addEventListener('click', (event) => {
+  if (!(event instanceof MouseEvent) || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+  const target = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>('a[data-admin-route]') : null;
+  if (!target || target.origin !== location.origin || target.target || target.hasAttribute('download')) return;
+  const route = target.dataset.adminRoute;
+  if (route !== 'users' && route !== 'ledger') return;
+  event.preventDefault();
+  const nextPath = `/${route}`;
+  const currentRoute = location.pathname.replace(/\/$/, '') === '/ledger' ? 'ledger' : 'users';
+  if (route === currentRoute && location.pathname === nextPath) return;
+  history.pushState(null, '', `${nextPath}${location.search}`);
+  if (isAdmin()) showAdminRoute();
+});
+
+window.addEventListener('popstate', () => {
   if (isAdmin()) showAdminRoute();
 });
 

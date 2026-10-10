@@ -27,13 +27,18 @@ button:disabled { opacity: .65; cursor: wait; }
 :focus-visible { outline: 2px solid #a8c7fa; outline-offset: 3px; }
 .skip-link { position: absolute; top: -80px; left: 16px; z-index: 1; padding: 12px; background: var(--surface); }
 .skip-link:focus { top: 8px; }
-.site-header, main { width: min(100%, 1200px); margin-inline: auto; padding-inline: 24px; }
+.site-header { width: min(100%, 1440px); margin-inline: auto; padding-inline: 24px; }
+.app-shell { width: min(100%, 1440px); margin-inline: auto; }
+.app-shell.is-admin { padding-inline: 24px; }
+main { width: min(100%, 1200px); margin-inline: auto; padding-inline: 24px; }
 .site-header { display: flex; align-items: center; justify-content: space-between; gap: 24px; min-height: 80px; padding-block: 16px; }
 .brand { font-size: 20px; font-weight: 600; text-decoration: none; }
 .account { display: flex; align-items: center; gap: 16px; min-width: 0; }
 .login-identity { color: var(--muted); overflow-wrap: anywhere; font-size: 14px; }
 .login-sign-out { flex-shrink: 0; }
 main { padding-bottom: 40px; }
+.app-shell.is-admin { display: grid; grid-template-columns: 208px minmax(0, 1fr); align-items: start; gap: 32px; }
+.app-shell.is-admin main { width: auto; min-width: 0; margin: 0; padding-inline: 0; }
 h1 { margin: 0; font-size: 28px; line-height: 1.25; letter-spacing: -.025em; }
 p { margin: 0; }
 .login-content { max-width: 360px; margin: 40px auto 0; }
@@ -54,9 +59,9 @@ p { margin: 0; }
 .email-login-submit { margin-top: 8px; }
 .login-provider.is-disabled { pointer-events: none; opacity: .65; }
 .users-content { margin-top: 24px; }
-.admin-nav { display: flex; gap: 20px; margin-top: 20px; border-bottom: 1px solid var(--line); }
-.admin-nav a { min-height: 44px; display: inline-flex; align-items: center; color: var(--muted); text-decoration: none; border-bottom: 2px solid transparent; }
-.admin-nav a[aria-current="page"] { color: #f2f4f7; border-bottom-color: #a8c7fa; }
+.admin-nav { position: sticky; top: 24px; display: flex; flex-direction: column; gap: 4px; margin-top: 24px; }
+.admin-nav a { min-height: 44px; display: flex; align-items: center; padding-inline: 12px; border-radius: 6px; color: var(--muted); text-decoration: none; }
+.admin-nav a[aria-current="page"] { color: #f2f4f7; background: var(--surface); box-shadow: inset 2px 0 #a8c7fa; }
 .admin-nav a:hover { color: #f2f4f7; }
 .users-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .users-status, .ledger-status { margin-top: 8px; color: var(--muted); }
@@ -84,12 +89,18 @@ th { color: var(--muted); font-weight: 500; white-space: nowrap; }
 .ledger-pagination { display: flex; gap: 8px; margin-top: 8px; }
 
 @media (max-width: 600px) {
-  .site-header, main { padding-inline: 16px; }
+  .site-header { padding-inline: 16px; }
+  .app-shell.is-admin { padding-inline: 16px; }
+  main { padding-inline: 16px; }
   .site-header { gap: 16px; }
   .account { gap: 8px; }
   .login-content { margin-top: 24px; }
   .email-login-form input { font-size: 16px; }
   .users-content { margin-top: 16px; }
   .ledger-content { margin-top: 16px; }
-  .admin-nav { margin-top: 12px; gap: 16px; }
+  .app-shell.is-admin { display: flex; flex-direction: column; align-items: stretch; gap: 0; }
+  .app-shell.is-admin main { padding-inline: 0; }
+  .admin-nav { position: static; flex-direction: row; gap: 8px; margin-top: 8px; margin-bottom: 16px; }
+  .admin-nav a { flex: 1; justify-content: center; }
+  .admin-nav a[aria-current="page"] { box-shadow: inset 0 -2px #a8c7fa; }
 }

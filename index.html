@@ -18,79 +18,81 @@
         <button class="login-sign-out" type="button">Sign out</button>
       </div>
     </header>
-    <main id="main" tabindex="-1">
-      <section class="login-content" aria-labelledby="login-title" aria-busy="true">
-        <h1 id="login-title">Log in</h1>
-        <p class="login-status" role="status">Checking your session…</p>
-        <div class="login-error" role="alert" hidden></div>
-        <div class="login-provider" hidden>
-          <div class="google-button-host" aria-label="Continue with Google"></div>
-          <p class="google-loading" role="status" hidden>Loading Google sign-in…</p>
-          <button class="google-retry" type="button" hidden>Retry Google sign-in</button>
-          <form class="email-login-form">
-            <label for="login-email">Email</label>
-            <input id="login-email" name="email" type="email" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="254" required />
-            <label for="login-password">Password</label>
-            <input id="login-password" name="password" type="password" autocomplete="current-password" maxlength="128" aria-describedby="email-login-help" required />
-            <p id="email-login-help">New here? We'll create your account. Use at least 8 characters for a new password.</p>
-            <button class="primary email-login-submit" type="submit">Continue with email</button>
-          </form>
-        </div>
-        <noscript><p>Enable JavaScript to sign in.</p></noscript>
-      </section>
+    <div class="app-shell">
       <nav class="admin-nav" aria-label="Administration" hidden>
-        <a href="#users" data-admin-route="users">Users</a>
-        <a href="#ledger" data-admin-route="ledger">Ledger</a>
+        <a href="/users" data-admin-route="users">Users</a>
+        <a href="/ledger" data-admin-route="ledger">Ledger</a>
       </nav>
-      <section class="users-content" aria-labelledby="users-title" hidden>
-        <div class="users-heading">
-          <h1 id="users-title" tabindex="-1">Users</h1>
-          <button class="users-refresh" type="button">Refresh</button>
-        </div>
-        <p class="users-status" role="status">Loading users…</p>
-        <div class="users-error" role="alert" hidden></div>
-        <div class="users-table-wrap" role="region" aria-label="Users, newest first" tabindex="0" hidden>
-          <table>
-            <thead>
-              <tr>
-                <th scope="col">Name</th>
-                <th scope="col">Email</th>
-                <th scope="col">Plan</th>
-                <th scope="col" aria-sort="descending">Created</th>
-                <th scope="col">User ID</th>
-              </tr>
-            </thead>
-            <tbody class="users-rows"></tbody>
-          </table>
-        </div>
-      </section>
-      <section class="ledger-content" aria-labelledby="ledger-title" hidden>
-        <div class="users-heading">
-          <h1 id="ledger-title" tabindex="-1">Ledger</h1>
-          <button class="ledger-refresh" type="button">Refresh</button>
-        </div>
-        <p class="ledger-status" role="status" aria-live="polite"></p>
-        <nav class="ledger-pagination" hidden aria-label="Ledger pagination">
-          <button class="ledger-previous" type="button" aria-label="Previous ledger page" disabled>Previous</button>
-          <button class="ledger-next" type="button" aria-label="Next ledger page" disabled>Next</button>
-        </nav>
-        <div class="ledger-error users-error" role="alert" hidden></div>
-        <div class="ledger-table-wrap" role="region" aria-label="Accounting ledger entries, sequence ascending" tabindex="0" hidden>
-          <table class="ledger-table">
-            <thead>
-              <tr>
-                <th scope="col" aria-sort="ascending">Sequence</th>
-                <th scope="col">Occurred (UTC)</th>
-                <th scope="col">Event</th>
-                <th scope="col">User ID</th>
-                <th scope="col">Details</th>
-              </tr>
-            </thead>
-            <tbody class="ledger-rows"></tbody>
-          </table>
-        </div>
-      </section>
-    </main>
+      <main id="main" tabindex="-1">
+        <section class="login-content" aria-labelledby="login-title" aria-busy="true">
+          <h1 id="login-title">Log in</h1>
+          <p class="login-status" role="status">Checking your session…</p>
+          <div class="login-error" role="alert" hidden></div>
+          <div class="login-provider" hidden>
+            <div class="google-button-host" aria-label="Continue with Google"></div>
+            <p class="google-loading" role="status" hidden>Loading Google sign-in…</p>
+            <button class="google-retry" type="button" hidden>Retry Google sign-in</button>
+            <form class="email-login-form">
+              <label for="login-email">Email</label>
+              <input id="login-email" name="email" type="email" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="254" required />
+              <label for="login-password">Password</label>
+              <input id="login-password" name="password" type="password" autocomplete="current-password" maxlength="128" aria-describedby="email-login-help" required />
+              <p id="email-login-help">New here? We'll create your account. Use at least 8 characters for a new password.</p>
+              <button class="primary email-login-submit" type="submit">Continue with email</button>
+            </form>
+          </div>
+          <noscript><p>Enable JavaScript to sign in.</p></noscript>
+        </section>
+        <section class="users-content" aria-labelledby="users-title" hidden>
+          <div class="users-heading">
+            <h1 id="users-title" tabindex="-1">Users</h1>
+            <button class="users-refresh" type="button">Refresh</button>
+          </div>
+          <p class="users-status" role="status">Loading users…</p>
+          <div class="users-error" role="alert" hidden></div>
+          <div class="users-table-wrap" role="region" aria-label="Users, newest first" tabindex="0" hidden>
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Name</th>
+                  <th scope="col">Email</th>
+                  <th scope="col">Plan</th>
+                  <th scope="col" aria-sort="descending">Created</th>
+                  <th scope="col">User ID</th>
+                </tr>
+              </thead>
+              <tbody class="users-rows"></tbody>
+            </table>
+          </div>
+        </section>
+        <section class="ledger-content" aria-labelledby="ledger-title" hidden>
+          <div class="users-heading">
+            <h1 id="ledger-title" tabindex="-1">Ledger</h1>
+            <button class="ledger-refresh" type="button">Refresh</button>
+          </div>
+          <p class="ledger-status" role="status" aria-live="polite"></p>
+          <nav class="ledger-pagination" hidden aria-label="Ledger pagination">
+            <button class="ledger-previous" type="button" aria-label="Previous ledger page" disabled>Previous</button>
+            <button class="ledger-next" type="button" aria-label="Next ledger page" disabled>Next</button>
+          </nav>
+          <div class="ledger-error users-error" role="alert" hidden></div>
+          <div class="ledger-table-wrap" role="region" aria-label="Accounting ledger entries, sequence ascending" tabindex="0" hidden>
+            <table class="ledger-table">
+              <thead>
+                <tr>
+                  <th scope="col" aria-sort="ascending">Sequence</th>
+                  <th scope="col">Occurred (UTC)</th>
+                  <th scope="col">Event</th>
+                  <th scope="col">User ID</th>
+                  <th scope="col">Details</th>
+                </tr>
+              </thead>
+              <tbody class="ledger-rows"></tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </div>
     <script type="module" src="/src/login.ts"></script>
   </body>
 </html>
