@@ -20,12 +20,18 @@ npm run preview   # Preview the built site with Wrangler
 npm run deploy    # Build, then deploy dist/ with Wrangler
 ```
 
-Run `npm run dev` in `../backend` for local authentication and `GET /admin/users`.
+Run `npm run dev` in `../backend` for local authentication, `GET /admin/users`,
+and the accounting ledger endpoint.
 The backend must have its database migrations and auth configuration in place.
 Local requests default to `http://localhost:8787`; production requests default
 to `https://api.mainbrella.com`.
 
 Override these defaults with `VITE_API_URL` and `VITE_GOOGLE_CLIENT_ID` if needed.
+The authenticated navigation includes a ledger view at `#ledger`. It reads the
+event stream in ascending sequence order, 100 entries per page, using a fixed
+`throughSequence` snapshot across pages; Refresh starts a new snapshot. The
+backend must have applied migration `020_accounting_ledger.sql` before the
+ledger endpoint is available.
 Google sign-in also requires the admin origin (`https://raindrop.mainbrella.com`,
 or `http://localhost:5174` for development) in the existing Google OAuth client's
 authorized JavaScript origins. The backend allows credentialed requests from

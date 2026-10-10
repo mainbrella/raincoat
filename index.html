@@ -38,6 +38,10 @@
         </div>
         <noscript><p>Enable JavaScript to sign in.</p></noscript>
       </section>
+      <nav class="admin-nav" aria-label="Administration" hidden>
+        <a href="#users" data-admin-route="users">Users</a>
+        <a href="#ledger" data-admin-route="ledger">Ledger</a>
+      </nav>
       <section class="users-content" aria-labelledby="users-title" hidden>
         <div class="users-heading">
           <h1 id="users-title" tabindex="-1">Users</h1>
@@ -57,6 +61,32 @@
               </tr>
             </thead>
             <tbody class="users-rows"></tbody>
+          </table>
+        </div>
+      </section>
+      <section class="ledger-content" aria-labelledby="ledger-title" hidden>
+        <div class="users-heading">
+          <h1 id="ledger-title" tabindex="-1">Ledger</h1>
+          <button class="ledger-refresh" type="button">Refresh</button>
+        </div>
+        <p class="ledger-status" role="status" aria-live="polite"></p>
+        <nav class="ledger-pagination" hidden aria-label="Ledger pagination">
+          <button class="ledger-previous" type="button" aria-label="Previous ledger page" disabled>Previous</button>
+          <button class="ledger-next" type="button" aria-label="Next ledger page" disabled>Next</button>
+        </nav>
+        <div class="ledger-error users-error" role="alert" hidden></div>
+        <div class="ledger-table-wrap" role="region" aria-label="Accounting ledger entries, sequence ascending" tabindex="0" hidden>
+          <table class="ledger-table">
+            <thead>
+              <tr>
+                <th scope="col" aria-sort="ascending">Sequence</th>
+                <th scope="col">Occurred (UTC)</th>
+                <th scope="col">Event</th>
+                <th scope="col">User ID</th>
+                <th scope="col">Details</th>
+              </tr>
+            </thead>
+            <tbody class="ledger-rows"></tbody>
           </table>
         </div>
       </section>

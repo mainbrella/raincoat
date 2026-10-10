@@ -1,4 +1,5 @@
 import { createAuthClient, GOOGLE_CLIENT_ID, API_ORIGIN } from './auth.ts';
+import { createLedgerView } from './ledger.ts';
 import type { AdminUser, User } from './types.ts';
 
 const auth = createAuthClient();
@@ -30,6 +31,17 @@ const usersError = requiredElement<HTMLElement>('.users-error');
 const usersTable = requiredElement<HTMLElement>('.users-table-wrap');
 const usersRows = requiredElement<HTMLTableSectionElement>('.users-rows');
 const usersRefresh = requiredElement<HTMLButtonElement>('.users-refresh');
+const adminNav = requiredElement<HTMLElement>('.admin-nav');
+const ledgerPage = requiredElement<HTMLElement>('.ledger-content');
+const ledgerTitle = requiredElement<HTMLHeadingElement>('#ledger-title');
+const ledgerStatus = requiredElement<HTMLElement>('.ledger-status');
+const ledgerError = requiredElement<HTMLElement>('.ledger-error');
+const ledgerTable = requiredElement<HTMLElement>('.ledger-table-wrap');
+const ledgerRows = requiredElement<HTMLTableSectionElement>('.ledger-rows');
+const ledgerRefresh = requiredElement<HTMLButtonElement>('.ledger-refresh');
+const ledgerPrevious = requiredElement<HTMLButtonElement>('.ledger-previous');
+const ledgerNext = requiredElement<HTMLButtonElement>('.ledger-next');
+const ledgerPagination = requiredElement<HTMLElement>('.ledger-pagination');
 const ADMIN_EMAIL = 'oneone@gmail.com';
 const signInPrompt = 'Continue with Google or email and password.';
 
@@ -37,6 +49,10 @@ let user: User | null = null;
 let signingIn = false;
 let signingOut = false;
 let usersRequest = 0;
+const ledger = createLedgerView({
+  page: ledgerPage, status: ledgerStatus, error: ledgerError, table: ledgerTable, rows: ledgerRows,
+  refresh: ledgerRefresh, previous: ledgerPrevious, next: ledgerNext, pagination: ledgerPagination,
+}, () => isAdmin() && !signingOut, handleLedgerAuthFailure);
 
 function isAdmin() {
   return user?.email?.trim().toLowerCase() === ADMIN_EMAIL;
@@ -77,10 +93,14 @@ async function start() {
 
 async function showCurrentState() {
   usersRequest++;
+  ledger.setActive(false);
+  adminNav.hidden = true;
+  for (const link of adminNav.querySelectorAll<HTMLAnchorElement>('a[data-admin-route]')) link.removeAttribute('aria-current');
   usersRows.replaceChildren();
   usersTable.hidden = true;
   usersError.hidden = true;
   usersPage.hidden = true;
+  ledgerPage.hidden = true;
   page.hidden = false;
   loginTitle.textContent = 'Log in';
   clearError();
@@ -89,9 +109,8 @@ async function showCurrentState() {
   provider.hidden = Boolean(user);
   if (isAdmin()) {
     page.hidden = true;
-    usersPage.hidden = false;
-    usersTitle.focus({ preventScroll: true });
-    await loadUsers();
+    adminNav.hidden = false;
+    showAdminRoute();
   } else if (user) {
     showAccessDenied();
   } else {
@@ -101,7 +120,10 @@ async function showCurrentState() {
 }
 
 function showAccessDenied() {
+  ledger.setActive(false);
+  adminNav.hidden = true;
   usersPage.hidden = true;
+  ledgerPage.hidden = true;
   usersRows.replaceChildren();
   usersTable.hidden = true;
   page.hidden = false;
@@ -110,6 +132,40 @@ function showAccessDenied() {
   loginTitle.textContent = 'Access denied';
   status.textContent = `Admin access is limited to ${ADMIN_EMAIL}. Sign out to use that account.`;
 }
+
+function showAdminRoute() {
+  if (!isAdmin() || signingOut) return;
+  const route = location.hash === '#ledger' ? 'ledger' : 'users';
+  if (location.hash !== `#${route}`) history.replaceState(null, '', `#${route}`);
+  for (const link of adminNav.querySelectorAll<HTMLAnchorElement>('a[data-admin-route]')) {
+    if (link.dataset.adminRoute === route) link.setAttribute('aria-current', 'page');
+    else link.removeAttribute('aria-current');
+  }
+  usersPage.hidden = route !== 'users';
+  ledgerPage.hidden = route !== 'ledger';
+  if (route === 'users') {
+    ledger.setActive(false);
+    usersTitle.focus({ preventScroll: true });
+    void loadUsers();
+  } else {
+    usersRequest++;
+    ledgerTitle.focus({ preventScroll: true });
+    ledger.setActive(true);
+  }
+}
+
+function handleLedgerAuthFailure(responseStatus: 401 | 403) {
+  if (responseStatus === 401) {
+    user = null;
+    void showCurrentState().then(() => { status.textContent = 'Your session expired. Sign in again.'; });
+  } else {
+    showAccessDenied();
+  }
+}
+
+window.addEventListener('hashchange', () => {
+  if (isAdmin()) showAdminRoute();
+});
 
 async function loadUsers() {
   if (!isAdmin() || signingOut) return;
@@ -261,23 +317,34 @@ async function signIn(authenticate: () => Promise<{ user: User }>): Promise<void
 signOutButton.addEventListener('click', async () => {
   if (signingOut || signingIn || !user) return;
   signingOut = true;
+  usersRequest++;
+  ledger.setActive(false);
   signOutButton.disabled = true;
   page.setAttribute('aria-busy', 'true');
   const currentStatus = page.hidden ? usersStatus : status;
-  currentStatus.textContent = 'Signing out…';
+  const currentPageStatus = ledgerPage.hidden ? currentStatus : ledgerStatus;
+  currentPageStatus.textContent = 'Signing out…';
   clearError();
+  let restoreAdminRoute = false;
+  let signOutError: unknown;
   try {
     await auth.signOut();
     user = null;
     await showCurrentState();
     emailInput.focus();
   } catch (cause) {
-    currentStatus.textContent = 'You’re still signed in.';
+    signOutError = cause;
+    currentPageStatus.textContent = 'You’re still signed in.';
     showError(cause);
+    restoreAdminRoute = true;
   } finally {
     signingOut = false;
     signOutButton.disabled = false;
     page.setAttribute('aria-busy', 'false');
+    if (restoreAdminRoute) {
+      showAdminRoute();
+      showError(signOutError);
+    }
   }
 });
 
@@ -293,7 +360,7 @@ window.addEventListener('auth-change', (event) => {
 });
 
 function showError(cause: unknown) {
-  const target = page.hidden ? usersError : error;
+  const target = page.hidden ? (ledgerPage.hidden ? usersError : ledgerError) : error;
   target.textContent = cause instanceof Error ? cause.message : 'Something went wrong. Please try again.';
   target.hidden = false;
 }
@@ -303,6 +370,8 @@ function clearError() {
   error.hidden = true;
   usersError.textContent = '';
   usersError.hidden = true;
+  ledgerError.textContent = '';
+  ledgerError.hidden = true;
 }
 
 function loadGoogleIdentityScript() {
