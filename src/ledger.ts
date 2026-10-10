@@ -1,6 +1,6 @@
 import { API_ORIGIN } from './auth.ts';
 
-type LedgerEventType = 'funding' | 'refund' | 'stripe_balance' | 'funding_state' | 'compute' | 'legacy_usage' | 'wallet_checkpoint';
+type LedgerEventType = 'funding' | 'refund' | 'stripe_balance' | 'funding_state' | 'compute' | 'inference' | 'legacy_usage' | 'wallet_checkpoint';
 interface LedgerEntry {
   sequence: number;
   event_key: string;
@@ -31,7 +31,7 @@ interface LedgerElements {
 const PAGE_SIZE = 100;
 const EVENT_LABELS: Record<LedgerEventType, string> = {
   funding: 'Funding', refund: 'Refund', stripe_balance: 'Stripe balance', funding_state: 'Funding state',
-  compute: 'Compute usage', legacy_usage: 'Legacy usage', wallet_checkpoint: 'Wallet checkpoint',
+  compute: 'Compute usage', inference: 'AI inference', legacy_usage: 'Legacy usage', wallet_checkpoint: 'Wallet checkpoint',
 };
 const MAX_DATE_MS = 8_640_000_000_000_000;
 
@@ -88,6 +88,12 @@ function formatNumber(value: unknown): string | null {
   return isSafeInteger(value) ? value.toLocaleString() : null;
 }
 
+function formatMicroUsd(value: unknown): string | null {
+  return isSafeInteger(value)
+    ? (value / 1_000_000).toLocaleString(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 6 })
+    : null;
+}
+
 function formatBoolean(value: unknown): string | null {
   return typeof value === 'boolean' ? (value ? 'Yes' : 'No') : null;
 }
@@ -127,6 +133,10 @@ function summary(entry: LedgerEntry): string {
       addDetail(parts, 'Usage', formatNumber(data.unitMs) === null ? null : `${formatNumber(data.unitMs)} weighted ms`);
       if (typeof data.name === 'string' && data.name) parts.push(data.name);
       if (typeof data.size === 'string' && data.size) parts.push(data.size);
+      break;
+    case 'inference':
+      addDetail(parts, 'Cost', formatMicroUsd(data.costMicroUsd));
+      if (typeof data.model === 'string' && data.model) parts.push(data.model);
       break;
     case 'legacy_usage':
       addDetail(parts, 'Usage', formatNumber(data.unitMs) === null ? null : `${formatNumber(data.unitMs)} weighted ms`);
@@ -250,10 +260,11 @@ export function createLedgerView(elements: LedgerElements, canAccess: () => bool
         onAuthFailure(response.status);
         return;
       }
+      if (!response.ok) throw new Error('ledger_service_unavailable');
       const value: unknown = await response.json().catch(() => null);
       if (id !== requestID || !active || !canAccess()) return;
-      const result = response.ok ? parsePage(value, position) : null;
-      if (!result) throw new Error('ledger_unavailable');
+      const result = parsePage(value, position);
+      if (!result) throw new Error('invalid_ledger_response');
 
       const rows = document.createDocumentFragment();
       for (const entry of result.entries) rows.append(renderEntry(entry));
@@ -283,12 +294,16 @@ export function createLedgerView(elements: LedgerElements, canAccess: () => bool
       }
       elements.previous.disabled = pageIndex === 0;
       elements.next.disabled = nextCursor === null;
-    } catch {
+    } catch (cause) {
       if (id !== requestID || currentController.signal.aborted || !active) return;
       elements.status.textContent = preserve
         ? `Could not load page ${pageIndex + (mode === 'next' ? 2 : 0)}.`
         : 'Could not load the ledger.';
-      elements.error.textContent = 'Check your connection and retry with the page controls or Refresh.';
+      elements.error.textContent = cause instanceof Error && cause.message === 'invalid_ledger_response'
+        ? 'The ledger returned an unexpected response. Try Refresh or contact support if this continues.'
+        : cause instanceof Error && cause.message === 'ledger_service_unavailable'
+          ? 'The ledger service could not load this page. Retry with the page controls or Refresh.'
+          : 'Check your connection and retry with the page controls or Refresh.';
       elements.error.hidden = false;
       elements.previous.disabled = pageIndex === 0;
       elements.next.disabled = nextCursor === null;
